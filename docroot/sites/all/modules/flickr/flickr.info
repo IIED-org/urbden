@@ -1,12 +1,19 @@
 name = Flickr
 description = Flickr and Drupal integration.
-package = Flickr
 core = 7.x
+package = Flickr
+configure = admin/config/media/flickr
 
-files[] = flickr.module
-; Information added by drupal.org packaging script on 2012-02-10
-version = "7.x-1.x-dev"
+simplytest_dependencies[] = style_settings
+simplytest_dependencies[] = colorbox
+simplytest_dependencies[] = flickr_simplytest
+simplytest_dependencies[] = libraries (>=2.x)
+simplytest_dependencies[] = colorbox
+soft_dependencies[] = style_settings
+
+; Information added by Drupal.org packaging script on 2016-06-25
+version = "7.x-1.8+7-dev"
 core = "7.x"
 project = "flickr"
-datestamp = "1328832859"
+datestamp = "1466886497"
 

@@ -1,6 +1,6 @@
 <?php
 // $Id$
-/* 
+/*
  * @file block_access.db.inc
  * DB interface for block_access module
  */
@@ -15,11 +15,11 @@ function block_access_delete_roles($module, $perm, $delta=NULL) {
   $delete = db_delete('block_access_roles')
     ->condition('module', $module, '=')
     ->condition('permission', $perm, '=');
-  if ($delta !== NULL) {
+  if ($delta) {
     $delete->condition('delta', $delta, '=');
   }
   else {
-    $delete->isNull('delta');
+    $delete->condition('delta', '', '=');
   }
   return $delete->execute();
 }
@@ -49,22 +49,31 @@ function block_access_add_role($rid, $module, $perm, $delta=NULL) {
  * @returns array of role IDs
  */
 function block_access_get_roles($module, $perm, $delta=NULL) {
-  $query = db_select('block_access_roles', 'b')
-    ->fields('b', array('rid'))
-    ->condition('module', $module, '=')
-    ->condition('permission', $perm, '=');
-
-  $result = $query->execute();
-
-  // If we didn't find any for the delta, use the module defaults
-  if (empty($result)) {
-    $query->isNull('delta');
+  $ret = array();
+  if ($delta) {
+    $query = db_select('block_access_roles', 'b')
+      ->fields('b', array('rid'))
+      ->condition('module', $module, '=')
+      ->condition('permission', $perm, '=')
+      ->condition('delta', $delta, '=');
     $result = $query->execute();
+    foreach ($result as $record) {
+      $ret[] = $record->rid;
+    }
   }
 
-  $ret = array();
-  foreach ($result as $record) {
-    $ret[] = $record->rid;
+  // If we didn't find any for the delta, or there is no delta
+  // then use the module defaults
+  if (empty($ret)) {
+    $query = db_select('block_access_roles', 'b')
+      ->fields('b', array('rid'))
+      ->condition('module', $module, '=')
+      ->condition('permission', $perm, '=')
+      ->condition('delta', '', '=');
+    $result = $query->execute();
+    foreach ($result as $record) {
+      $ret[] = $record->rid;
+    }
   }
 
   return $ret;
@@ -79,7 +88,7 @@ function block_access_get_module($module) {
   $query = db_select('block_access_roles', 'b')
     ->fields('b', array('rid', 'permission'))
     ->condition('module', $module, '=')
-    ->isNull('delta');
+    ->condition('delta', '', '=');
 
   $result = $query->execute();
   $ret = array();
@@ -90,46 +99,6 @@ function block_access_get_module($module) {
     else {
       $ret[$ob->rid] = array($ob->permission);
     }
-  }
-  return $ret;
-}
-
-/**
- * Fetches block details from the {block} table for a given module/delta
- *
- * @param $module string
- *   name of the module
- * @param $delta int
- *   block delta
- * @return array
- *   block details array
- */
-function block_access_get_block($module, $delta) {
-  $result = db_query(
-    "SELECT * FROM {block} WHERE module = :module AND delta = :delta", 
-    array(':module' => $module, ':delta' => $delta)
-  );
-  return $result->fetchAssoc();
-}
-
-/**
- * Fetches roles for a given block
- *
- * @param $module string
- *   name of the module
- * @param $delta int
- *   block delta
- * @return array
- *   array of role IDs
- */
-function block_access_get_block_roles($module, $delta) {
-  $result = db_query(
-    "SELECT rid FROM {block_role} WHERE  module = :module AND delta = :delta",
-    array(':module' => $module, ':delta' => $delta)
-  );
-  $ret = array();
-  while ($row = $result->fetchAssoc()) {
-    $ret[] = $row['rid'];
   }
   return $ret;
 }
